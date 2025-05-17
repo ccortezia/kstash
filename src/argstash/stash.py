@@ -36,3 +36,6 @@ class Stash:
             return msgpack.packb(data)
         except Exception as error:
             raise ValueError(f"invalid data: {data}") from error
+
+    def __repr__(self) -> str:
+        return f"Stash(name={self.name}, namespace={self.namespace}, address={self.address})"
