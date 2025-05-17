@@ -13,7 +13,7 @@ MD5_RE = r"[a-f0-9]{32}"
 # Common stashes must only contain a namespace and a name.
 # - Example: mem://my-namespace/my-variable.28a5e15a666b0cd1415490dcf6674255
 GENERAL_ADDRESS_RE = re.compile(
-    rf"^(?P<schema>mem)://{NS_RE}/{NAME_RE}\.(?P<md5>{MD5_RE})$"
+    rf"^(?P<schema>mem|s3)://{NS_RE}/{NAME_RE}\.(?P<md5>{MD5_RE})$"
 )
 
 # Inline stashes carry the encoded value directly in the address string.

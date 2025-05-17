@@ -2,7 +2,8 @@ import msgpack
 import pytest
 
 from argstash.api import consume, create
-from argstash.exceptions import NotFoundError
+from argstash.config import Config
+from argstash.exceptions import StashNotFoundError
 from argstash.stash import ArgData
 
 
@@ -35,7 +36,7 @@ def test_echo_inline_stash(arg_value: ArgData):
 
 def test_create_with_invalid_value_should_raise():
     class CustomClass:
-        value = 10.0987986767865765
+        value = 10.09
 
     with pytest.raises(ValueError):
         create("test", CustomClass())  # type: ignore
@@ -53,7 +54,8 @@ def test_create_with_invalid_value_should_raise():
     ],
 )
 def test_echo_memory_stash(arg_value: ArgData):
-    stash = create("mydatapoint", arg_value, namespace="app")
+    config = Config(backends=["inline", "mem"])
+    stash = create("mydatapoint", arg_value, namespace="app", config=config)
     assert stash.name == "mydatapoint"
     assert stash.data == arg_value
     assert stash.encoded == msgpack.packb(arg_value)
@@ -76,5 +78,5 @@ def test_echo_memory_stash(arg_value: ArgData):
     ],
 )
 def test_consume_stash_not_found(address: str):
-    with pytest.raises(NotFoundError, match=address):
+    with pytest.raises(StashNotFoundError, match=address):
         consume(address)
