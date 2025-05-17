@@ -3,7 +3,11 @@ from typing import Any
 import pytest
 
 from argstash.address import address_from_string
-from argstash.backend import get_backend_from_address, get_backend_from_value
+from argstash.backend import (
+    InlineBackend,
+    get_backend_from_address,
+    get_backend_from_value,
+)
 
 
 @pytest.mark.parametrize(
@@ -30,7 +34,9 @@ def test_get_backend_from_value(value: Any, backend_name: str):
 @pytest.mark.parametrize(
     "address,backend_name",
     [
-        pytest.param("mem://default/test", "mem", id="mem"),
+        pytest.param(
+            "mem://default/test.28a5e15a666b0cd1415490dcf6674255", "mem", id="mem"
+        ),
         pytest.param("inline://default/test/cmVkICAxMQ==", "inline", id="inline"),
     ],
 )
@@ -44,3 +50,9 @@ def test_get_backend_from_unsupported_address_should_raise():
     object.__setattr__(address, "schema", "invalid")
     with pytest.raises(RuntimeError):
         get_backend_from_address(address)
+
+
+def test_inline_backend_load_with_incompatible_address_should_raise():
+    address = address_from_string("mem://default/test.28a5e15a666b0cd1415490dcf6674255")
+    with pytest.raises(ValueError):
+        InlineBackend().load_stash(address)

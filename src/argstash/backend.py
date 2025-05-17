@@ -4,6 +4,8 @@ from dataclasses import dataclass
 import msgpack
 
 from .address import Address, InlineAddress, address_from_string
+from .config import MAX_INLINE_ARG_LENGTH
+from .exceptions import NotFoundError
 from .stash import ArgData, Stash
 
 
@@ -22,7 +24,12 @@ class Backend:
         raise NotImplementedError
 
     def make_address(self, stash: Stash) -> Address:
-        return Address(schema=self.name, namespace=stash.namespace, name=stash.name)
+        return Address(
+            schema=self.name,
+            namespace=stash.namespace,
+            name=stash.name,
+            md5=stash.md5,
+        )
 
 
 @dataclass(frozen=True)
@@ -36,6 +43,7 @@ class InlineBackend(Backend):
             namespace=stash.namespace,
             name=stash.name,
             argdata=value,
+            md5=stash.md5,
         )
 
     def _save_stash(self, stash: Stash) -> Stash:
@@ -55,27 +63,34 @@ class InlineBackend(Backend):
         )
 
 
+MEM_BACKEND_STORE: dict[Address, Stash] = {}
+
+
 @dataclass(frozen=True)
 class MemBackend(Backend):
     name: str = "mem"
 
-    def save_stash(self, name: str, data: ArgData, namespace: str = "default") -> Stash:
-        raise NotImplementedError
+    def _save_stash(self, stash: Stash) -> Stash:
+        MEM_BACKEND_STORE[stash.address] = stash
+        return stash
 
     def load_stash(self, address: Address) -> Stash:
-        raise NotImplementedError
+        try:
+            return MEM_BACKEND_STORE[address]
+        except KeyError as error:
+            raise NotFoundError(f"stash not found: {address}") from error
 
 
-def _inline_backend_for_value(value: ArgData) -> Backend | None:
+def _get_inline_backend_from_value(value: ArgData) -> Backend | None:
     if not isinstance(value, (int, float, bool, str)):
         return None
-    if isinstance(value, str) and len(value.encode("utf-8")) > 100:
+    if isinstance(value, str) and len(value.encode("utf-8")) > MAX_INLINE_ARG_LENGTH:
         return None
     return InlineBackend()
 
 
 def get_backend_from_value(value: ArgData) -> Backend:
-    if inline_backend := _inline_backend_for_value(value):
+    if inline_backend := _get_inline_backend_from_value(value):
         return inline_backend
     return MemBackend()
 

@@ -9,19 +9,34 @@ from argstash.address import address_from_string
     "addr_str,expected",
     [
         pytest.param(
-            "inline://default/myvar/cmVkICAxMQ==",
+            "inline://default/myvar/sGFkanVzdGluZz1jb2xvcjs=",
             {"schema": "inline", "namespace": "default", "name": "myvar"},
-            id="default-namespace-inline",
+            id="inline-simple-segments",
         ),
         pytest.param(
-            "mem://custom/testvar",
-            {"schema": "mem", "namespace": "custom", "name": "testvar"},
-            id="custom-namespace-mem",
-        ),
-        pytest.param(
-            "inline://my-namespace/my-variable/cmVkICAxMQ==",
+            "inline://my-namespace/my-variable/sGFkanVzdGluZz1jb2xvcjs=",
             {"schema": "inline", "namespace": "my-namespace", "name": "my-variable"},
-            id="hyphenated-namespace-and-name",
+            id="inline-hyphenated-segments",
+        ),
+        pytest.param(
+            "mem://custom/testvar.28a5e15a666b0cd1415490dcf6674255",
+            {
+                "schema": "mem",
+                "namespace": "custom",
+                "name": "testvar",
+                "md5": "28a5e15a666b0cd1415490dcf6674255",
+            },
+            id="mem-simple-segments",
+        ),
+        pytest.param(
+            "mem://my-namespace/my-variable.28a5e15a666b0cd1415490dcf6674255",
+            {
+                "schema": "mem",
+                "namespace": "my-namespace",
+                "name": "my-variable",
+                "md5": "28a5e15a666b0cd1415490dcf6674255",
+            },
+            id="mem-simple-segments",
         ),
     ],
 )
@@ -37,7 +52,7 @@ def test_valid_addresses(addr_str: str, expected: Dict[str, str]) -> None:
     "invalid_addr",
     [
         pytest.param(
-            "inline:/-invalid/myvar/cmVkICAxMQ==",
+            "inline:/-invalid/myvar/sGFkanVzdGluZz1jb2xvcjs=",
             id="bad-scheme-separator-1",
         ),
         pytest.param(
@@ -53,27 +68,27 @@ def test_valid_addresses(addr_str: str, expected: Dict[str, str]) -> None:
             id="invalid-scheme",
         ),
         pytest.param(
-            "inline://-invalid/myvar/cmVkICAxMQ==",
+            "inline://-invalid/myvar/sGFkanVzdGluZz1jb2xvcjs=",
             id="namespace-starts-with-hyphen",
         ),
         pytest.param(
-            "inline://inv@lid/myvar/cmVkICAxMQ==",
+            "inline://inv@lid/myvar/sGFkanVzdGluZz1jb2xvcjs=",
             id="namespace-invalid-character",
         ),
         pytest.param(
-            "inline://" + "a" * 41 + "/myvar/cmVkICAxMQ==",
+            "inline://" + "a" * 41 + "/myvar/sGFkanVzdGluZz1jb2xvcjs=",
             id="namespace-too-long",
         ),
         pytest.param(
-            "inline://default/-myvar/cmVkICAxMQ==",
+            "inline://default/-myvar/sGFkanVzdGluZz1jb2xvcjs=",
             id="name-starts-with-hyphen",
         ),
         pytest.param(
-            "inline://default/my@var/cmVkICAxMQ==",
+            "inline://default/my@var/sGFkanVzdGluZz1jb2xvcjs=",
             id="name-invalid-character",
         ),
         pytest.param(
-            "inline://default/" + "a" * 41 + "/cmVkICAxMQ==",
+            "inline://default/" + "a" * 41 + "/sGFkanVzdGluZz1jb2xvcjs=",
             id="name-too-long",
         ),
     ],
@@ -84,6 +99,6 @@ def test_invalid_address_format(invalid_addr: str) -> None:
 
 
 def test_string_representation():
-    addr_str = "mem://test/var"
+    addr_str = "mem://test/var.28a5e15a666b0cd1415490dcf6674255"
     addr = address_from_string(addr_str)
     assert str(addr) == addr_str
