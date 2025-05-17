@@ -7,7 +7,7 @@ import msgpack
 from .address import Address
 
 if TYPE_CHECKING:
-    from .backend import Backend
+    from .backend_base import Backend
 
 type JSONData = (
     str | int | float | bool | None | list["JSONData"] | dict[str, "JSONData"]
