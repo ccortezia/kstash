@@ -2,7 +2,7 @@ from dataclasses import dataclass
 
 from .address import Address
 from .backend_base import Backend, stash_backend
-from .exceptions import StashNotFoundError
+from .exceptions import StashNotFound
 from .stash import Stash
 
 MEM_BACKEND_STORE: dict[Address, Stash] = {}
@@ -19,4 +19,4 @@ class MemBackend(Backend):
         try:
             return MEM_BACKEND_STORE[address]
         except KeyError as error:
-            raise StashNotFoundError(f"stash not found: {address}") from error
+            raise StashNotFound(f"stash not found: {address}") from error

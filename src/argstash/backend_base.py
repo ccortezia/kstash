@@ -3,7 +3,7 @@ from typing import Type
 
 from .address import Address, address_from_string
 from .config import Config
-from .exceptions import UnknownBackendError
+from .exceptions import UnsupportedBackend
 from .stash import ArgData, Stash
 
 
@@ -46,7 +46,7 @@ class BackendRegistry:
         try:
             return self._registry[name]
         except KeyError:
-            raise UnknownBackendError(f"'{name}' is not registered")
+            raise UnsupportedBackend(f"'{name}' is not registered")
 
     def list(self) -> list[str]:
         return list(self._registry.keys())
@@ -73,7 +73,7 @@ def get_backend_from_value(value: ArgData, config: Config) -> Backend:
         backend = backend_cls()
         if backend.accepts(value, config):
             return backend
-    raise UnknownBackendError("no backend available")
+    raise UnsupportedBackend("no backend available")
 
 
 def get_backend_from_address(address: Address | str, config: Config) -> Backend:

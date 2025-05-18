@@ -6,7 +6,7 @@ from argstash.address import address_from_string
 from argstash.backend import get_backend_from_address, get_backend_from_value
 from argstash.backend_inline import InlineBackend
 from argstash.config import CONFIG, Config
-from argstash.exceptions import UnknownBackendError
+from argstash.exceptions import UnsupportedBackend
 
 
 @pytest.mark.parametrize(
@@ -50,12 +50,12 @@ def test_get_backend_from_address(address: str, backend_name: str):
 def test_get_backend_from_address_unsupported_schema_should_raise():
     address = address_from_string("inline://default/test/cmVkICAxMQ==")
     object.__setattr__(address, "schema", "invalid")
-    with pytest.raises(UnknownBackendError):
+    with pytest.raises(UnsupportedBackend):
         get_backend_from_address(address, CONFIG)
 
 
 def test_get_backend_from_value_unsupported_backend_should_raise():
-    with pytest.raises(UnknownBackendError):
+    with pytest.raises(UnsupportedBackend):
         get_backend_from_value({"a": 1}, Config(backends=["inline"]))
 
 
