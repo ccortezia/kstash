@@ -1,0 +1,24 @@
+import pytest
+from botocore.exceptions import ClientError
+from pytest import MonkeyPatch
+from types_boto3_s3 import S3Client
+
+from argstash.backend_s3 import S3Backend
+from argstash.exceptions import BackendRemoteError
+
+
+def test_s3_backend_load_stash_remote_error(
+    s3_setup: S3Client, monkeypatch: MonkeyPatch
+):
+    backend = S3Backend()
+    stash = backend.save_stash("x", "config-data", namespace="app")
+    monkeypatch.setattr(backend.s3_client, "get_object", mock_get_object)  # type: ignore
+    with pytest.raises(BackendRemoteError):
+        backend.load_stash(stash.address)
+
+
+def mock_get_object(*args: object, **kwargs: object) -> None:
+    raise ClientError(
+        error_response={"Error": {"Code": "InternalError", "Message": "Mocked"}},
+        operation_name="GetObject",
+    )

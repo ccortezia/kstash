@@ -1,6 +1,10 @@
-class StashNotFoundError(Exception):
+class StashNotFound(Exception):
     pass
 
 
-class UnknownBackendError(Exception):
+class BackendRemoteError(Exception):
+    pass
+
+
+class UnsupportedBackend(Exception):
     pass

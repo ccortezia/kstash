@@ -3,7 +3,7 @@ from dataclasses import dataclass
 import pytest
 
 from argstash.backend_base import Backend, BackendRegistry
-from argstash.exceptions import UnknownBackendError
+from argstash.exceptions import UnsupportedBackend
 
 
 @dataclass(frozen=True)
@@ -27,7 +27,7 @@ def test_backend_registry_add_duplicate_should_raise():
 
 def test_backend_registry_get_unknown_should_raise():
     registry = BackendRegistry()
-    with pytest.raises(UnknownBackendError, match="'unknown' is not registered"):
+    with pytest.raises(UnsupportedBackend, match="'unknown' is not registered"):
         registry.get("unknown")
 
 
