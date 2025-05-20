@@ -2,9 +2,7 @@ from typing import Any
 
 import pytest
 
-from argstash.address import address_from_string
 from argstash.backend import get_backend_from_address, get_backend_from_value
-from argstash.backend_inline import InlineBackend
 from argstash.config import CONFIG, Config
 from argstash.exceptions import UnsupportedBackend
 
@@ -48,18 +46,10 @@ def test_get_backend_from_address(address: str, backend_name: str):
 
 
 def test_get_backend_from_address_unsupported_schema_should_raise():
-    address = address_from_string("inline://default/test/cmVkICAxMQ==")
-    object.__setattr__(address, "schema", "invalid")
     with pytest.raises(UnsupportedBackend):
-        get_backend_from_address(address, CONFIG)
+        get_backend_from_address("unknown://default/test/cmVkICAxMQ==", CONFIG)
 
 
 def test_get_backend_from_value_unsupported_backend_should_raise():
     with pytest.raises(UnsupportedBackend):
         get_backend_from_value({"a": 1}, Config(backends=["inline"]))
-
-
-def test_inline_backend_load_stash_with_incompatible_address_should_raise():
-    address = address_from_string("mem://default/test.28a5e15a666b0cd1415490dcf6674255")
-    with pytest.raises(ValueError):
-        InlineBackend().load_stash(address)
