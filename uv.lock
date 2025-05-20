@@ -21,6 +21,7 @@ dev = [
     { name = "moto", extra = ["s3"] },
     { name = "pytest" },
     { name = "pytest-cov" },
+    { name = "responses" },
     { name = "ruff" },
 ]
 
@@ -40,6 +41,7 @@ dev = [
     { name = "moto", extras = ["s3"], specifier = ">=5.1.4" },
     { name = "pytest", specifier = ">=8.3.5" },
     { name = "pytest-cov", specifier = ">=6.1.1" },
+    { name = "responses", specifier = ">=0.25.7" },
     { name = "ruff", specifier = ">=0.11.10" },
 ]
 

@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
-from urllib.parse import urlencode, urlparse
+from urllib.parse import ParseResult, parse_qsl, urlencode, urlparse
 
 if TYPE_CHECKING:
     from .stash import Stash
@@ -15,7 +15,15 @@ class Address:
 
     @classmethod
     def from_string(cls, address: str) -> "Address":
-        raise NotImplementedError
+        parsed: ParseResult = urlparse(address)
+        if parsed.scheme != cls.scheme:
+            raise ValueError(f"invalid {cls.scheme} address: {address}")
+        return cls(
+            scheme=parsed.scheme,
+            location=parsed.netloc,
+            path=parsed.path,
+            extra=parse_qsl(parsed.query),
+        )
 
     @classmethod
     def from_stash(cls, stash: "Stash") -> "Address":

@@ -6,7 +6,7 @@ from argstash.config import Config
 def test_default_config():
     config = Config()
     assert config.max_inline_len == 100
-    assert config.backends == ["inline", "s3"]
+    assert config.backends == ["inline", "s3", "http"]
 
 
 def test_custom_config():

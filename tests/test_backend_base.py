@@ -1,35 +1,8 @@
-from typing import Any
-
 import pytest
 
-from argstash.backend import get_backend_from_address, get_backend_from_value
+from argstash.backend import get_backend_from_address
 from argstash.config import CONFIG, Config
 from argstash.exceptions import UnsupportedBackend
-
-
-@pytest.mark.parametrize(
-    "value,backend_name,config",
-    [
-        pytest.param(1, "inline", Config(), id="int"),
-        pytest.param("1", "inline", Config(), id="str_num"),
-        pytest.param(1.2, "inline", Config(), id="float"),
-        pytest.param(True, "inline", Config(), id="true"),
-        pytest.param(False, "inline", Config(), id="false"),
-        pytest.param(None, "mem", Config(backends=["inline", "mem"]), id="none"),
-        pytest.param(b"1", "mem", Config(backends=["inline", "mem"]), id="bytes"),
-        pytest.param({"a": 1}, "mem", Config(backends=["inline", "mem"]), id="dict"),
-        pytest.param([1, 2, 3], "mem", Config(backends=["inline", "mem"]), id="list"),
-        pytest.param("a" * 1000, "mem", Config(backends=["inline", "mem"]), id="long"),
-        pytest.param(None, "s3", Config(backends=["inline", "s3"]), id="none"),
-        pytest.param(b"1", "s3", Config(backends=["inline", "s3"]), id="bytes"),
-        pytest.param({"a": 1}, "s3", Config(backends=["inline", "s3"]), id="dict"),
-        pytest.param([1, 2, 3], "s3", Config(backends=["inline", "s3"]), id="list"),
-        pytest.param("a" * 1000, "s3", Config(backends=["inline", "s3"]), id="long"),
-    ],
-)
-def test_get_backend_from_value(value: Any, backend_name: str, config: Config):
-    backend = get_backend_from_value(value, config)
-    assert backend.name == backend_name
 
 
 @pytest.mark.parametrize(
@@ -41,15 +14,11 @@ def test_get_backend_from_value(value: Any, backend_name: str, config: Config):
     ],
 )
 def test_get_backend_from_address(address: str, backend_name: str):
-    backend = get_backend_from_address(address, CONFIG)
+    config = Config(backends=["inline", "mem", "s3"])
+    backend = get_backend_from_address(address, config)
     assert backend.name == backend_name
 
 
 def test_get_backend_from_address_unsupported_schema_should_raise():
     with pytest.raises(UnsupportedBackend):
         get_backend_from_address("unknown://default/test/cmVkICAxMQ==", CONFIG)
-
-
-def test_get_backend_from_value_unsupported_backend_should_raise():
-    with pytest.raises(UnsupportedBackend):
-        get_backend_from_value({"a": 1}, Config(backends=["inline"]))

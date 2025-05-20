@@ -1,10 +1,11 @@
 import msgpack
 import pytest
+import responses
 from types_boto3_s3 import S3Client
 
-from argstash.api import consume, create
+from argstash.api import consume, create, share
 from argstash.config import Config
-from argstash.exceptions import StashNotFound
+from argstash.exceptions import StashNotFound, UnsupportedBackend
 from argstash.stash import ArgData
 
 
@@ -33,6 +34,13 @@ def test_echo_inline_stash(arg_value: ArgData):
     assert stash.backend.name == "inline"
     assert stash.namespace == "app"
     assert stash.encoded == msgpack.packb(arg_value)
+
+
+def test_create_with_no_available_backend_should_raise():
+    config = Config(backends=["inline"])
+    data_len = config.max_inline_len + 1
+    with pytest.raises(UnsupportedBackend):
+        create("test", "a" * data_len, config=config)
 
 
 def test_create_with_invalid_value_should_raise():
@@ -64,19 +72,12 @@ def test_echo_memory_stash(arg_value: ArgData):
     assert stash.namespace == "app"
     assert stash.name == "mydatapoint"
 
-    stash = consume(stash.address)
+    stash = consume(stash.address, config=config)
     assert stash.name == "mydatapoint"
     assert stash.data == arg_value
     assert stash.backend.name == "mem"
     assert stash.namespace == "app"
     assert stash.encoded == msgpack.packb(arg_value)
-
-
-def test_s3_manual(s3_setup: S3Client):
-    config = Config(backends=["s3"])
-    stash = create("mydatapoint", "red-red", namespace="app", config=config)
-    stash = consume(stash.address)
-    pass
 
 
 @pytest.mark.parametrize(
@@ -109,6 +110,14 @@ def test_echo_s3_stash(arg_value: ArgData, s3_setup: S3Client):
     assert stash.encoded == msgpack.packb(arg_value)
 
 
+def test_echo_s3_stash_share(s3_setup: S3Client):
+    config = Config(backends=["s3", "https"])
+    stash = create("mydatapoint", {"color": "red"}, namespace="app", config=config)
+    share_address = share(stash)
+    assert share_address.startswith("https://")
+    stash = consume(share_address, config=config)
+
+
 @pytest.mark.parametrize(
     "address",
     [
@@ -117,6 +126,14 @@ def test_echo_s3_stash(arg_value: ArgData, s3_setup: S3Client):
         pytest.param("s3://unknown/x.28a5e15a666b0cd1415490dcf6674255", id="s3"),
     ],
 )
+@responses.activate
 def test_consume_stash_not_found(address: str, s3_setup: S3Client):
+    config = Config(backends=["inline", "mem", "s3", "https"])
     with pytest.raises(StashNotFound, match=address):
-        consume(address)
+        consume(address, config=config)
+
+
+def test_consume_with_no_available_backend_should_raise():
+    stash = create("test", "a", config=Config(backends=["inline"]))
+    with pytest.raises(UnsupportedBackend):
+        consume(stash.address, config=Config(backends=["s3"]))
