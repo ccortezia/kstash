@@ -32,5 +32,6 @@ dev = [
     "moto[s3]>=5.1.4",
     "pytest>=8.3.5",
     "pytest-cov>=6.1.1",
+    "responses>=0.25.7",
     "ruff>=0.11.10",
 ]

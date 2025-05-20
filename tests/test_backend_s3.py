@@ -17,6 +17,12 @@ def test_s3_backend_load_stash_remote_error(
         backend.load_stash(stash.address)
 
 
+def test_s3_backend_load_stash_bad_path(s3_setup: S3Client):
+    backend = S3Backend()
+    with pytest.raises(ValueError):
+        backend.load_stash("s3://app/x.28a5e15a666b0cd1415490dcf66")
+
+
 def mock_get_object(*args: object, **kwargs: object) -> None:
     raise ClientError(
         error_response={"Error": {"Code": "InternalError", "Message": "Mocked"}},

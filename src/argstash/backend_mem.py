@@ -1,18 +1,17 @@
 from dataclasses import dataclass
-from urllib.parse import ParseResult, urlparse
 
 from .address import Address
 from .backend_base import Backend, stash_backend
-from .exceptions import StashNotFound
-from .stash import Stash
+from .exceptions import StashNotFound, UnsupportedOperation
+from .stash import LinkedStash, Stash
 
-MEM_BACKEND_STORE: dict[str, Stash] = {}
+MEM_BACKEND_STORE: dict[str, LinkedStash] = {}
 
 
 @stash_backend("mem")
 @dataclass(frozen=True)
 class MemBackend(Backend):
-    def _save_stash(self, stash: Stash) -> Stash:
+    def _save_stash(self, stash: LinkedStash) -> LinkedStash:
         MEM_BACKEND_STORE[str(stash.address)] = stash
         return stash
 
@@ -22,7 +21,10 @@ class MemBackend(Backend):
     def parse_address(self, address: str) -> Address:
         return MemAddress.from_string(address)
 
-    def load_stash(self, address: Address | str) -> Stash:
+    def make_share_address(self, stash: Stash, ttl_sec: int = 10) -> str:
+        raise UnsupportedOperation
+
+    def load_stash(self, address: Address | str) -> LinkedStash:
         address = self.parse_address(str(address))
         try:
             return MEM_BACKEND_STORE[str(address)]
@@ -30,19 +32,12 @@ class MemBackend(Backend):
             raise StashNotFound(f"stash not found: {address}") from error
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True)
 class MemAddress(Address):
     scheme: str = "mem"
 
     @classmethod
-    def from_string(cls, address: str) -> "MemAddress":
-        parsed: ParseResult = urlparse(address)
-        if parsed.scheme != cls.scheme:
-            raise ValueError(f"invalid mem address: {address}")
-        return cls(scheme=parsed.scheme, location=parsed.netloc, path=parsed.path)
-
-    @classmethod
-    def from_stash(cls, stash: Stash) -> "MemAddress":
+    def from_stash(cls, stash: Stash) -> "Address":
         return cls(
             scheme=cls.scheme,
             location=stash.namespace,

@@ -8,3 +8,7 @@ class BackendRemoteError(Exception):
 
 class UnsupportedBackend(Exception):
     pass
+
+
+class UnsupportedOperation(Exception):
+    pass

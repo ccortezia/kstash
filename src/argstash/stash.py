@@ -21,21 +21,36 @@ class Stash:
     namespace: str = "default"
     name: str
     data: ArgData
-    address: Address = field(init=False)
-    backend: "Backend"
     encoded: bytes = field(init=False)
     md5: str = field(init=False)
 
     def __post_init__(self):
         object.__setattr__(self, "encoded", self._encode(self.data))
         object.__setattr__(self, "md5", hashlib.md5(self.encoded).hexdigest())
-        object.__setattr__(self, "address", self.backend.make_address(self))
 
     def _encode(self, data: ArgData) -> bytes:
         try:
             return msgpack.packb(data)
         except Exception as error:
             raise ValueError(f"invalid data: {data}") from error
+
+    def __repr__(self) -> str:
+        return f"Stash(name={self.name}, namespace={self.namespace})"
+
+    def link(self, backend: "Backend", address: Address | None = None):
+        return LinkedStash(
+            namespace=self.namespace,
+            name=self.name,
+            data=self.data,
+            backend=backend,
+            address=address or backend.make_address(self),
+        )
+
+
+@dataclass(kw_only=True, frozen=True)
+class LinkedStash(Stash):
+    backend: "Backend"
+    address: Address
 
     def __repr__(self) -> str:
         return f"Stash(name={self.name}, namespace={self.namespace}, address={self.address})"
