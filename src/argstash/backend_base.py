@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from typing import Type
 
-from .address import Address, address_from_string
+from .address import Address, parse_address_scheme
 from .config import Config
 from .exceptions import UnsupportedBackend
 from .stash import ArgData, Stash
@@ -21,16 +21,14 @@ class Backend:
     def _save_stash(self, stash: Stash) -> Stash:
         raise NotImplementedError
 
-    def load_stash(self, address: Address) -> Stash:
+    def load_stash(self, address: Address | str) -> Stash:
+        raise NotImplementedError
+
+    def parse_address(self, address: str) -> Address:
         raise NotImplementedError
 
     def make_address(self, stash: Stash) -> Address:
-        return Address(
-            schema=self.name,
-            namespace=stash.namespace,
-            name=stash.name,
-            md5=stash.md5,
-        )
+        raise NotImplementedError
 
 
 @dataclass(frozen=True)
@@ -47,6 +45,10 @@ class BackendRegistry:
             return self._registry[name]
         except KeyError:
             raise UnsupportedBackend(f"'{name}' is not registered")
+
+    def get_from_address(self, address: Address | str) -> Type["Backend"]:
+        scheme = parse_address_scheme(address)
+        return self.get(scheme)
 
     def list(self) -> list[str]:
         return list(self._registry.keys())
@@ -77,7 +79,5 @@ def get_backend_from_value(value: ArgData, config: Config) -> Backend:
 
 
 def get_backend_from_address(address: Address | str, config: Config) -> Backend:
-    if isinstance(address, str):
-        address = address_from_string(address)
-    backend_cls = BACKEND_REGISTRY.get(address.schema)
+    backend_cls = BACKEND_REGISTRY.get_from_address(address)
     return backend_cls()

@@ -72,6 +72,13 @@ def test_echo_memory_stash(arg_value: ArgData):
     assert stash.encoded == msgpack.packb(arg_value)
 
 
+def test_s3_manual(s3_setup: S3Client):
+    config = Config(backends=["s3"])
+    stash = create("mydatapoint", "red-red", namespace="app", config=config)
+    stash = consume(stash.address)
+    pass
+
+
 @pytest.mark.parametrize(
     "arg_value",
     [
@@ -92,6 +99,7 @@ def test_echo_s3_stash(arg_value: ArgData, s3_setup: S3Client):
     assert stash.backend.name == "s3"
     assert stash.namespace == "app"
     assert stash.name == "mydatapoint"
+    assert str(stash.address) == f"s3://app/mydatapoint.{stash.md5}"
 
     stash = consume(stash.address)
     assert stash.name == "mydatapoint"
