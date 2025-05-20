@@ -21,7 +21,7 @@ def create(
     raise UnsupportedBackend("no backend supports this operation")
 
 
-def consume(
+def retrieve(
     address: Address | str,
     config: Config = CONFIG,
 ) -> LinkedStash:
