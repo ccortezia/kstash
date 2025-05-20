@@ -1,8 +1,7 @@
 import pytest
-
-from argstash.backend import get_backend_from_address
-from argstash.config import CONFIG, Config
-from argstash.exceptions import UnsupportedBackend
+from fdstash.backend import get_backend_from_address
+from fdstash.config import CONFIG, Config
+from fdstash.exceptions import UnsupportedBackend
 
 
 @pytest.mark.parametrize(

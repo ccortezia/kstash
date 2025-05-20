@@ -1,9 +1,8 @@
 from dataclasses import dataclass
 
 import pytest
-
-from argstash.backend_base import Backend, BackendRegistry
-from argstash.exceptions import UnsupportedBackend
+from fdstash.backend_base import Backend, BackendRegistry
+from fdstash.exceptions import UnsupportedBackend
 
 
 @dataclass(frozen=True)
