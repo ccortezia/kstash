@@ -1,10 +1,9 @@
 import pytest
 import responses
+from fdstash.backend_http import HttpBackend
+from fdstash.exceptions import BackendRemoteError, StashNotFound, UnsupportedOperation
+from fdstash.stash import Stash
 from requests.exceptions import ConnectionError
-
-from argstash.backend_http import HttpBackend
-from argstash.exceptions import BackendRemoteError, StashNotFound, UnsupportedOperation
-from argstash.stash import Stash
 
 
 def test_backend_http_cannot_save_stash():

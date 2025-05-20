@@ -1,6 +1,5 @@
 import pytest
-
-from argstash.config import Config
+from fdstash.config import Config
 
 
 def test_default_config():

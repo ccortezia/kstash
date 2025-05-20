@@ -1,12 +1,11 @@
 import msgpack
 import pytest
 import responses
+from fdstash.api import consume, create, share
+from fdstash.config import Config
+from fdstash.exceptions import StashNotFound, UnsupportedBackend
+from fdstash.stash import ArgData
 from types_boto3_s3 import S3Client
-
-from argstash.api import consume, create, share
-from argstash.config import Config
-from argstash.exceptions import StashNotFound, UnsupportedBackend
-from argstash.stash import ArgData
 
 
 @pytest.mark.parametrize(

@@ -1,8 +1,7 @@
 import pytest
-
-from argstash.backend_inline import InlineBackend
-from argstash.exceptions import UnsupportedOperation
-from argstash.stash import Stash
+from fdstash.backend_inline import InlineBackend
+from fdstash.exceptions import UnsupportedOperation
+from fdstash.stash import Stash
 
 
 def test_inline_backend_load_stash_with_incompatible_address_should_raise():
