@@ -39,6 +39,12 @@ jobs:
           source .venv/bin/activate
           ruff format --diff
 
+      - name: Type check with Pyright
+        run: |
+          npm install -g pyright
+          source .venv/bin/activate
+          pyright
+
       - name: Test with pytest
         run: |
           source .venv/bin/activate

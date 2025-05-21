@@ -11,7 +11,7 @@ class Address:
     scheme: str
     location: str
     path: str
-    extra: list[tuple[str, str]] = field(default_factory=list)
+    extra: list[tuple[str, str]] = field(default_factory=lambda: [])
 
     @classmethod
     def from_string(cls, address: str) -> "Address":

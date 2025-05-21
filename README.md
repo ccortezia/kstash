@@ -2,6 +2,8 @@
 
 A Python library for transparently linking large message attributes using remote object storage.
 
+[![CI](https://github.com/ccortezia/fdstash/actions/workflows/main.yml/badge.svg)](https://github.com/ccortezia/fdstash/actions/workflows/main.yml)
+
 ## Installation
 
 ```bash
