@@ -1,7 +1,6 @@
 import pytest
-
-from fdstash.backend_mem import MemBackend
-from fdstash.stash import Stash
+from kstash.backend_mem import MemBackend
+from kstash.stash import Stash
 
 
 @pytest.mark.parametrize(

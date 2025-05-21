@@ -1,8 +1,7 @@
 import pytest
-
-from fdstash.backend_mem import MemBackend
-from fdstash.exceptions import UnsupportedOperation
-from fdstash.stash import Stash
+from kstash.backend_mem import MemBackend
+from kstash.exceptions import UnsupportedOperation
+from kstash.stash import Stash
 
 
 def test_mem_backend_cannot_share_stash():

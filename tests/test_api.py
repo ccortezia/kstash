@@ -1,12 +1,11 @@
 import msgpack
 import pytest
 import responses
+from kstash.api import create, retrieve
+from kstash.config import Config
+from kstash.exceptions import StashNotFound, UnsupportedBackend
+from kstash.stash import ArgData
 from types_boto3_s3 import S3Client
-
-from fdstash.api import create, retrieve
-from fdstash.config import Config
-from fdstash.exceptions import StashNotFound, UnsupportedBackend
-from fdstash.stash import ArgData
 
 
 @pytest.mark.parametrize(

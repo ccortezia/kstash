@@ -1,7 +1,7 @@
 import pytest
-from fdstash.backend import get_backend_from_address
-from fdstash.config import CONFIG, Config
-from fdstash.exceptions import UnsupportedBackend
+from kstash.backend import get_backend_from_address
+from kstash.config import CONFIG, Config
+from kstash.exceptions import UnsupportedBackend
 
 
 @pytest.mark.parametrize(
