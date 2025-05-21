@@ -1,7 +1,12 @@
 [project]
 name = "kstash"
 version = "0.1.0"
+license = "MIT"
 description = "Stashed payloads with nice URIs"
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Programming Language :: Python"
+]
 readme = "README.md"
 authors = [
     { name = "Cristiano Cortezia", email = "cristiano.cortezia@gmail.com" }
@@ -15,6 +20,9 @@ dependencies = [
     "types-boto3-s3>=1.38.0",
     "types-urllib3>=1.26.25.14",
 ]
+
+[project.urls]
+Homepage = "https://github.com/ccortezia/kstash"
 
 [build-system]
 requires = ["hatchling"]
