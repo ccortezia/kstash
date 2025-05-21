@@ -3,34 +3,28 @@ from typing import Type
 
 from .address import Address, parse_address_scheme
 from .config import CONFIG, Config
-from .exceptions import UnsupportedBackend, UnsupportedOperation
-from .stash import ArgData, LinkedStash, Stash
+from .exceptions import UnsupportedBackend
+from .stash import ArgData, SealedStash, Stash
 
 
 @dataclass(frozen=True)
 class Backend:
     name: str = field(init=False, default=NotImplemented)  # type: ignore
+    config: Config = field(default=CONFIG)
 
     def save_stash(
         self,
         name: str,
         data: ArgData,
         namespace: str = "default",
-        config: Config = CONFIG,
-    ) -> LinkedStash:
-        if not self._validate_input(data, config):
-            raise UnsupportedOperation
+    ) -> SealedStash:
         stash = Stash(name=name, namespace=namespace, data=data)
-        stash = stash.link(backend=self, address=self.make_address(stash))
         return self._save_stash(stash)
 
-    def _validate_input(self, data: ArgData, config: Config) -> bool:
-        return True
-
-    def _save_stash(self, stash: LinkedStash) -> LinkedStash:
+    def _save_stash(self, stash: Stash) -> SealedStash:
         raise NotImplementedError
 
-    def load_stash(self, address: Address | str) -> LinkedStash:
+    def load_stash(self, address: Address | str) -> SealedStash:
         raise NotImplementedError
 
     def parse_address(self, address: str) -> Address:
@@ -39,7 +33,7 @@ class Backend:
     def make_address(self, stash: Stash) -> Address:
         raise NotImplementedError
 
-    def make_share_address(self, stash: Stash, ttl_sec: int = 10) -> str:
+    def make_share_address(self, stash: Stash, ttl_sec: int | None = None) -> Address:
         raise NotImplementedError
 
 
@@ -81,14 +75,16 @@ def stash_backend(name: str):
     return wrapper
 
 
-def get_backend_from_address(address: Address | str, config: Config) -> Backend:
+def get_backend_from_address(
+    address: Address | str, config: Config = CONFIG
+) -> Backend:
     backend_cls = BACKEND_REGISTRY.get_from_address(address)
     if backend_cls.name not in config.backends:
         raise UnsupportedBackend(f"no backend available to load stash {str(address)}")
-    return backend_cls()
+    return backend_cls(config=config)
 
 
-def get_backends_from_config(config: Config):
+def get_backends_from_config(config: Config = CONFIG):
     for backend_name in config.backends:
         backend_cls = BACKEND_REGISTRY.get(backend_name)
-        yield backend_cls()
+        yield backend_cls(config=config)

@@ -1,4 +1,5 @@
 import pytest
+
 from fdstash.backend_mem import MemBackend
 from fdstash.exceptions import UnsupportedOperation
 from fdstash.stash import Stash

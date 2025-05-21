@@ -3,37 +3,97 @@ import pytest
 import responses
 from types_boto3_s3 import S3Client
 
-from fdstash.api import create, retrieve, share
+from fdstash.api import create, retrieve
 from fdstash.config import Config
 from fdstash.exceptions import StashNotFound, UnsupportedBackend
 from fdstash.stash import ArgData
 
 
 @pytest.mark.parametrize(
-    "arg_value",
+    "backend, arg_data",
     [
-        pytest.param("red-red", id="alphanumeric"),
-        pytest.param('"há não @!;"', id="text"),
-        pytest.param(1, id="int"),
-        pytest.param(1.0, id="float"),
-        pytest.param(True, id="bool"),
+        pytest.param("inline", {"color": "red-red"}, id="inline.dict"),
+        pytest.param("inline", {"text": "há não @!;"}, id="inline.dict_with_text"),
+        pytest.param("inline", {"number": 1}, id="inline.dict_with_int"),
+        pytest.param("inline", {"float": 1.0}, id="inline.dict_with_float"),
+        pytest.param("inline", {"bool": True}, id="inline.dict_with_bool"),
+        pytest.param("mem", {"color": "red-red"}, id="mem.dict"),
+        pytest.param("mem", {"text": "há não @!;"}, id="mem.dict_with_text"),
+        pytest.param("mem", {"number": 1}, id="mem.dict_with_int"),
+        pytest.param("mem", {"float": 1.0}, id="mem.dict_with_float"),
+        pytest.param("mem", {"bool": True}, id="mem.dict_with_bool"),
+        pytest.param("mem", "c" * 101, id="mem.large_string"),
+        pytest.param("s3", {"color": "red-red"}, id="s3.dict"),
+        pytest.param("s3", {"text": "há não @!;"}, id="s3.dict_with_text"),
+        pytest.param("s3", {"number": 1}, id="s3.dict_with_int"),
+        pytest.param("s3", {"float": 1.0}, id="s3.dict_with_float"),
+        pytest.param("s3", {"bool": True}, id="s3.dict_with_bool"),
+        pytest.param("s3", "c" * 101, id="s3.large_string"),
     ],
 )
-def test_echo_inline_stash(arg_value: ArgData):
-    stash = create("color", arg_value, namespace="app")
-    assert stash.name == "color"
-    assert stash.data == arg_value
-    assert stash.encoded == msgpack.packb(arg_value)
-    assert stash.backend.name == "inline"
+def test_stash_creation_and_retrieval(
+    backend: str,
+    arg_data: ArgData,
+    s3_setup: S3Client,
+):
+    config = Config(backends=[backend])
+    stash = create("mydatapoint", arg_data, namespace="app", config=config)
+    assert stash.name == "mydatapoint"
+    assert stash.data == arg_data
+    assert stash.encoded == msgpack.packb(arg_data)
+    assert stash.backend.name == backend
     assert stash.namespace == "app"
-    assert stash.name == "color"
+    assert stash.name == "mydatapoint"
+    stash = retrieve(stash.address, config=config)
+    assert stash.name == "mydatapoint"
+    assert stash.data == arg_data
+    assert stash.backend.name == backend
+    assert stash.namespace == "app"
+    assert stash.encoded == msgpack.packb(arg_data)
 
-    stash = retrieve(stash.address)
-    assert stash.name == "color"
-    assert stash.data == arg_value
-    assert stash.backend.name == "inline"
+
+@pytest.mark.parametrize(
+    "backend, arg_data",
+    [
+        pytest.param("s3", {"color": "red-red"}, id="s3.dict"),
+        pytest.param("s3", {"text": "há não @!;"}, id="s3.dict_with_text"),
+        pytest.param("s3", {"number": 1}, id="s3.dict_with_int"),
+        pytest.param("s3", {"float": 1.0}, id="s3.dict_with_float"),
+        pytest.param("s3", {"bool": True}, id="s3.dict_with_bool"),
+        pytest.param("s3", "c" * 101, id="s3.large_string"),
+    ],
+)
+def test_stash_create_share_and_retrieve(
+    backend: str,
+    arg_data: ArgData,
+    s3_setup: S3Client,
+):
+    config = Config(backends=[backend, "https"])
+    stash = create("mydatapoint", arg_data, namespace="app", config=config)
+    assert stash.name == "mydatapoint"
+    assert stash.data == arg_data
+    assert stash.encoded == msgpack.packb(arg_data)
+    assert stash.backend.name == backend
     assert stash.namespace == "app"
-    assert stash.encoded == msgpack.packb(arg_value)
+    assert stash.name == "mydatapoint"
+
+    shared_address = stash.share()
+    assert shared_address.scheme == "https"
+    assert shared_address.location == "app.s3.amazonaws.com"
+    assert shared_address.path == f"/mydatapoint.{stash.md5}"
+
+    shared_stash = retrieve(shared_address, config=config)
+    assert shared_stash.namespace == "app"
+    assert shared_stash.name == "mydatapoint"
+    assert shared_stash.data == arg_data
+    assert shared_stash.backend.name == "https"
+    assert shared_stash.encoded == msgpack.packb(arg_data)
+
+
+def test_create_skips_inline_for_large_data():
+    config = Config(backends=["inline", "mem"])
+    stash = create("mydatapoint", "c" * (config.max_inline_len + 1), config=config)
+    assert stash.backend.name == "mem"
 
 
 def test_create_with_no_available_backend_should_raise():
@@ -51,77 +111,20 @@ def test_create_with_invalid_value_should_raise():
         create("test", CustomClass())  # type: ignore
 
 
-@pytest.mark.parametrize(
-    "arg_value",
-    [
-        pytest.param({"color": "red-red"}, id="dict"),
-        pytest.param({"text": "há não @!;"}, id="dict_with_text"),
-        pytest.param({"number": 1}, id="dict_with_int"),
-        pytest.param({"float": 1.0}, id="dict_with_float"),
-        pytest.param({"bool": True}, id="dict_with_bool"),
-        pytest.param("c" * 101, id="large_string"),
-    ],
-)
-def test_echo_memory_stash(arg_value: ArgData):
-    config = Config(backends=["inline", "mem"])
-    stash = create("mydatapoint", arg_value, namespace="app", config=config)
-    assert stash.name == "mydatapoint"
-    assert stash.data == arg_value
-    assert stash.encoded == msgpack.packb(arg_value)
-    assert stash.backend.name == "mem"
-    assert stash.namespace == "app"
-    assert stash.name == "mydatapoint"
-
-    stash = retrieve(stash.address, config=config)
-    assert stash.name == "mydatapoint"
-    assert stash.data == arg_value
-    assert stash.backend.name == "mem"
-    assert stash.namespace == "app"
-    assert stash.encoded == msgpack.packb(arg_value)
-
-
-@pytest.mark.parametrize(
-    "arg_value",
-    [
-        pytest.param({"color": "red-red"}, id="dict"),
-        pytest.param({"text": "há não @!;"}, id="dict_with_text"),
-        pytest.param({"number": 1}, id="dict_with_int"),
-        pytest.param({"float": 1.0}, id="dict_with_float"),
-        pytest.param({"bool": True}, id="dict_with_bool"),
-        pytest.param("c" * 101, id="large_string"),
-    ],
-)
-def test_echo_s3_stash(arg_value: ArgData, s3_setup: S3Client):
-    config = Config(backends=["inline", "s3"])
-    stash = create("mydatapoint", arg_value, namespace="app", config=config)
-    assert stash.name == "mydatapoint"
-    assert stash.data == arg_value
-    assert stash.encoded == msgpack.packb(arg_value)
-    assert stash.backend.name == "s3"
-    assert stash.namespace == "app"
-    assert stash.name == "mydatapoint"
-    assert str(stash.address) == f"s3://app/mydatapoint.{stash.md5}"
-
-    stash = retrieve(stash.address)
-    assert stash.name == "mydatapoint"
-    assert stash.data == arg_value
-    assert stash.backend.name == "s3"
-    assert stash.namespace == "app"
-    assert stash.encoded == msgpack.packb(arg_value)
-
-
-def test_echo_s3_stash_share(s3_setup: S3Client):
-    config = Config(backends=["s3", "https"])
-    stash = create("mydatapoint", {"color": "red"}, namespace="app", config=config)
-    share_address = share(stash)
-    assert share_address.startswith("https://")
-    stash = retrieve(share_address, config=config)
+@pytest.mark.parametrize("backend", ["inline", "mem", "s3"])
+@responses.activate
+def test_create_stash_is_idempotent(backend: str, s3_setup: S3Client):
+    config = Config(backends=[backend])
+    stash1 = create("color", "red", namespace="app", config=config)
+    stash2 = create("color", "red", namespace="app", config=config)
+    assert stash1 == stash2
 
 
 @pytest.mark.parametrize(
     "address",
     [
         pytest.param("mem://app/x.28a5e15a666b0cd1415490dcf6674255", id="mem"),
+        pytest.param("mem://unknown/x.28a5e15a666b0cd1415490dcf6674255", id="mem"),
         pytest.param("s3://app/x.28a5e15a666b0cd1415490dcf6674255", id="s3"),
         pytest.param("s3://unknown/x.28a5e15a666b0cd1415490dcf6674255", id="s3"),
     ],
