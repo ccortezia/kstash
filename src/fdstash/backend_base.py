@@ -39,7 +39,7 @@ class Backend:
 
 @dataclass(frozen=True)
 class BackendRegistry:
-    _registry: dict[str, Type["Backend"]] = field(default_factory=dict)
+    _registry: dict[str, Type["Backend"]] = field(default_factory=lambda: {})
 
     def add(self, name: str, cls: Type["Backend"]):
         if name in self._registry:
