@@ -1,3 +1,4 @@
+import re
 from dataclasses import dataclass
 
 import msgpack
@@ -6,7 +7,7 @@ import requests
 from .address import Address
 from .backend_base import Backend, stash_backend
 from .exceptions import BackendRemoteError, StashNotFound, UnsupportedOperation
-from .stash import LinkedStash, Stash
+from .stash import SealedStash, Stash
 
 
 @stash_backend("https")
@@ -18,11 +19,21 @@ class HttpBackend(Backend):
     def make_address(self, stash: Stash) -> Address:
         raise UnsupportedOperation
 
-    def make_share_address(self, stash: Stash, ttl_sec: int = 10) -> str:
+    def make_share_address(self, stash: Stash, ttl_sec: int | None = None) -> Address:
         raise UnsupportedOperation
 
-    def load_stash(self, address: Address | str) -> LinkedStash:
+    def _save_stash(self, stash: Stash) -> SealedStash:
+        raise UnsupportedOperation
+
+    def load_stash(self, address: Address | str) -> SealedStash:
         address = self.parse_address(str(address))
+
+        # TODO: refactor and parse path natively during address construction
+        path_regex = r"(?P<name>.*)\.(?P<md5>[a-f0-9]{32})$"
+        if not (match := re.match(path_regex, address.path)):
+            raise ValueError(f"invalid address: {address}")
+        grouped = match.groupdict()
+        stash_name = grouped["name"].strip("/")
 
         try:
             response = requests.get(str(address))
@@ -39,12 +50,12 @@ class HttpBackend(Backend):
         data = msgpack.unpackb(response.content)
 
         stash = Stash(
-            name=address.path.strip("/"),
-            namespace=address.location,
+            name=stash_name,
+            namespace=address.location.split(".")[0],
             data=data,
         )
 
-        return stash.link(backend=self, address=address)
+        return stash.seal(backend=self, address=address)
 
 
 @dataclass(frozen=True, kw_only=True)

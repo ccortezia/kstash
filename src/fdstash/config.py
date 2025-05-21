@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 @dataclass(kw_only=True, frozen=True)
 class Config:
     max_inline_len: int = 100
-    backends: list[str] = field(default_factory=lambda: ["inline", "s3", "http"])
+    backends: list[str] = field(default_factory=lambda: ["inline", "s3", "https"])
     share_ttl_sec: int = 10
 
     def __post_init__(self) -> None:

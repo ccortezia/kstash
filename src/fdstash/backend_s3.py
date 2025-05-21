@@ -8,8 +8,9 @@ from types_boto3_s3 import S3Client
 
 from .address import Address
 from .backend_base import Backend, stash_backend
+from .backend_http import HttpAddress
 from .exceptions import BackendRemoteError, StashNotFound
-from .stash import LinkedStash, Stash
+from .stash import SealedStash, Stash
 
 
 @stash_backend("s3")
@@ -28,15 +29,22 @@ class S3Backend(Backend):
     def parse_address(self, address: str) -> Address:
         return S3Address.from_string(address)
 
-    def _save_stash(self, stash: LinkedStash) -> LinkedStash:
-        self.s3_client.put_object(
-            Bucket=stash.namespace,
-            Key=s3_key_from_stash(stash),
-            Body=stash.encoded,
-        )
-        return stash
+    def _save_stash(self, stash: Stash) -> SealedStash:
+        try:
+            self.s3_client.put_object(
+                Bucket=stash.namespace,
+                Key=s3_key_from_stash(stash),
+                Body=stash.encoded,
+                IfNoneMatch="*",  # Prevents accidental stash overwriting.
+            )
+        except ClientError as e:
+            if e.response["Error"]["Code"] == "PreconditionFailed":  # type: ignore
+                return self.load_stash(self.make_address(stash))
+            raise BackendRemoteError(self.name) from e
 
-    def load_stash(self, address: Address | str) -> LinkedStash:
+        return stash.seal(backend=self, address=self.make_address(stash))
+
+    def load_stash(self, address: Address | str) -> SealedStash:
         address = self.parse_address(str(address))  # induce validation
 
         # TODO: refactor and parse path natively during address construction
@@ -44,7 +52,7 @@ class S3Backend(Backend):
         if not (match := re.match(path_regex, address.path)):
             raise ValueError(f"invalid address: {address}")
         grouped = match.groupdict()
-        name = grouped["name"].strip("/")
+        stash_name = grouped["name"].strip("/")
 
         try:
             response = self.s3_client.get_object(
@@ -59,16 +67,16 @@ class S3Backend(Backend):
         raw = response.get("Body").read()
         data = msgpack.unpackb(raw)
 
-        stash = Stash(name=name, namespace=address.location, data=data)
-        return stash.link(backend=self, address=address)
+        stash = Stash(name=stash_name, namespace=address.location, data=data)
+        return stash.seal(backend=self, address=address)
 
-    def make_share_address(self, stash: Stash, ttl_sec: int = 10) -> str:
+    def make_share_address(self, stash: Stash, ttl_sec: int | None = None) -> Address:
         presigned_url = self.s3_client.generate_presigned_url(
             "get_object",
             Params={"Bucket": stash.namespace, "Key": s3_key_from_stash(stash)},
-            ExpiresIn=ttl_sec,
+            ExpiresIn=ttl_sec or self.config.share_ttl_sec,
         )
-        return presigned_url
+        return HttpAddress.from_string(presigned_url)
 
 
 @dataclass(frozen=True, kw_only=True)

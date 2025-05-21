@@ -5,13 +5,12 @@ import msgpack
 
 from .address import Address
 from .backend_base import Backend, stash_backend
-from .config import Config
 from .exceptions import UnsupportedOperation
-from .stash import ArgData, LinkedStash, Stash
+from .stash import SealedStash, Stash
 
 
 @stash_backend("inline")
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True)
 class InlineBackend(Backend):
     def make_address(self, stash: Stash) -> Address:
         return InlineAddress.from_stash(stash)
@@ -19,30 +18,26 @@ class InlineBackend(Backend):
     def parse_address(self, address: str) -> Address:
         return InlineAddress.from_string(address)
 
-    def make_share_address(self, stash: Stash, ttl_sec: int = 10) -> str:
+    def make_share_address(self, stash: Stash, ttl_sec: int | None = None) -> Address:
         raise UnsupportedOperation
 
-    def _validate_input(self, data: ArgData, config: Config) -> bool:
-        if not isinstance(data, (int, float, bool, str)):
-            return False
-        if isinstance(data, str) and len(data.encode("utf-8")) > config.max_inline_len:
-            return False
-        return True
+    def _save_stash(self, stash: Stash) -> SealedStash:
+        address = self.make_address(stash)
+        if len(address.extra[0][1]) > self.config.max_inline_len:
+            raise UnsupportedOperation("data: too large to inline")
+        return stash.seal(backend=self, address=address)
 
-    def _save_stash(self, stash: LinkedStash) -> LinkedStash:
-        # Does nothing -- this backend does not persist data.
-        return stash
-
-    def load_stash(self, address: Address | str) -> LinkedStash:
-        address = self.parse_address(str(address))  # induce validation
+    def load_stash(self, address: Address | str) -> SealedStash:
+        address = self.parse_address(str(address))
         raw = base64.b64decode(address.extra[0][1])
         data = msgpack.unpackb(raw)
-        stash = Stash(
+        return SealedStash(
             name=address.path.strip("/"),
             namespace=address.location,
             data=data,
+            backend=self,
+            address=address,
         )
-        return stash.link(backend=self, address=address)
 
 
 @dataclass(frozen=True, kw_only=True)

@@ -3,15 +3,16 @@ from dataclasses import dataclass
 from .address import Address
 from .backend_base import Backend, stash_backend
 from .exceptions import StashNotFound, UnsupportedOperation
-from .stash import LinkedStash, Stash
+from .stash import SealedStash, Stash
 
-MEM_BACKEND_STORE: dict[str, LinkedStash] = {}
+MEM_BACKEND_STORE: dict[str, SealedStash] = {}
 
 
 @stash_backend("mem")
 @dataclass(frozen=True)
 class MemBackend(Backend):
-    def _save_stash(self, stash: LinkedStash) -> LinkedStash:
+    def _save_stash(self, stash: Stash) -> SealedStash:
+        stash = stash.seal(backend=self, address=self.make_address(stash))
         MEM_BACKEND_STORE[str(stash.address)] = stash
         return stash
 
@@ -21,10 +22,10 @@ class MemBackend(Backend):
     def parse_address(self, address: str) -> Address:
         return MemAddress.from_string(address)
 
-    def make_share_address(self, stash: Stash, ttl_sec: int = 10) -> str:
+    def make_share_address(self, stash: Stash, ttl_sec: int | None = None) -> Address:
         raise UnsupportedOperation
 
-    def load_stash(self, address: Address | str) -> LinkedStash:
+    def load_stash(self, address: Address | str) -> SealedStash:
         address = self.parse_address(str(address))
         try:
             return MEM_BACKEND_STORE[str(address)]
@@ -41,5 +42,5 @@ class MemAddress(Address):
         return cls(
             scheme=cls.scheme,
             location=stash.namespace,
-            path=stash.name,
+            path=f"{stash.name}.{stash.md5}",
         )

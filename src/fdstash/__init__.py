@@ -1,4 +1,4 @@
-from .api import create, retrieve, share
+from .api import create, retrieve
 from .config import Config
 
-__all__ = ["create", "retrieve", "share", "Config"]
+__all__ = ["create", "retrieve", "Config"]

@@ -37,8 +37,17 @@ class Stash:
     def __repr__(self) -> str:
         return f"Stash(name={self.name}, namespace={self.namespace})"
 
-    def link(self, backend: "Backend", address: Address | None = None):
-        return LinkedStash(
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Stash):
+            return False
+        return (
+            self.name == other.name
+            and self.namespace == other.namespace
+            and self.md5 == other.md5
+        )
+
+    def seal(self, backend: "Backend", address: Address | None = None) -> "SealedStash":
+        return SealedStash(
             namespace=self.namespace,
             name=self.name,
             data=self.data,
@@ -48,9 +57,15 @@ class Stash:
 
 
 @dataclass(kw_only=True, frozen=True)
-class LinkedStash(Stash):
+class SealedStash(Stash):
     backend: "Backend"
     address: Address
 
     def __repr__(self) -> str:
         return f"Stash(name={self.name}, namespace={self.namespace}, address={self.address})"
+
+    def __eq__(self, other: object) -> bool:
+        return super().__eq__(other)
+
+    def share(self, ttl_sec: int | None = None) -> "Address":
+        return self.backend.make_share_address(self, ttl_sec)

@@ -1,11 +1,12 @@
 import pytest
+
 from fdstash.config import Config
 
 
 def test_default_config():
     config = Config()
     assert config.max_inline_len == 100
-    assert config.backends == ["inline", "s3", "http"]
+    assert config.backends == ["inline", "s3", "https"]
 
 
 def test_custom_config():
