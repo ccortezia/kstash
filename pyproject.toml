@@ -1,7 +1,7 @@
 [project]
 name = "kstash"
 version = "0.1.0"
-description = "Add your description here"
+description = "Stashed payloads with nice URIs"
 readme = "README.md"
 authors = [
     { name = "Cristiano Cortezia", email = "cristiano.cortezia@gmail.com" }

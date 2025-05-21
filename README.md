@@ -1,6 +1,8 @@
 # kstash
 
-A Python library for transparently linking large message attributes using remote object storage.
+`kstash` converts payloads into addressable stashes. 
+
+It allows programs to communicate using stash addresses instead of entire payloads, reducing the strain on messaging systems.
 
 [![CI](https://github.com/ccortezia/kstash/actions/workflows/main.yml/badge.svg)](https://github.com/ccortezia/kstash/actions/workflows/main.yml)
 
@@ -15,7 +17,22 @@ pip install kstash
 - Python >= 3.13
 - AWS credentials configured (for S3 storage)
 
-## Quick Start
+## Basics
+
+Use `kstash` to put a payload into an addressable stash.
+
+Then provide `kstash` with the address to recover the payload.
+
+```python
+import kstash
+stash = kstash.create("my-payload", "some-data")
+loaded = kstash.retrieve(stash.address)
+stash == loaded
+```
+
+## Simple Storage (S3)
+
+By default, `kstash.create()` saves large payloads to S3.
 
 ```python
 # Optional: Test Backend Setup
