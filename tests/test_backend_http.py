@@ -1,11 +1,10 @@
 import msgpack
 import pytest
 import responses
+from kstash.backend_http import HttpBackend
+from kstash.exceptions import BackendRemoteError, StashNotFound, UnsupportedOperation
+from kstash.stash import Stash
 from requests.exceptions import ConnectionError
-
-from fdstash.backend_http import HttpBackend
-from fdstash.exceptions import BackendRemoteError, StashNotFound, UnsupportedOperation
-from fdstash.stash import Stash
 
 SAMPLE_URL = "https://app.s3.amazonaws.com/x.34472d91b2f84052bf26d4eaa862ef86"
 

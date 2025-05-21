@@ -1,11 +1,10 @@
 import pytest
 from botocore.exceptions import ClientError
+from kstash.api import Config, create
+from kstash.backend_s3 import S3Backend
+from kstash.exceptions import BackendRemoteError
 from pytest import MonkeyPatch
 from types_boto3_s3 import S3Client
-
-from fdstash.api import Config, create
-from fdstash.backend_s3 import S3Backend
-from fdstash.exceptions import BackendRemoteError
 
 
 def test_s3_backend_save_stash_remote_error(

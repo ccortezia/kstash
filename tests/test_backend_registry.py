@@ -1,8 +1,8 @@
 from dataclasses import dataclass
 
 import pytest
-from fdstash.backend_base import Backend, BackendRegistry
-from fdstash.exceptions import UnsupportedBackend
+from kstash.backend_base import Backend, BackendRegistry
+from kstash.exceptions import UnsupportedBackend
 
 
 @dataclass(frozen=True)
