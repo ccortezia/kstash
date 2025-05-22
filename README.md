@@ -82,7 +82,7 @@ loaded_stash = kstash.retrieve(shared_link)
 
 ## Inline Data Optimization
 
-`kstash.create()` embeds small data in the stash's address.
+`kstash.create()` embeds small payloads in the stash's address.
 
 See `kstash.Config.max_inline_len` for configuration details.
 
@@ -95,9 +95,9 @@ assert loaded_stash == stash
 loaded_stash.data
 ```
 
-## Selectible Backends
+## Backends
 
-Backends can be disabled to address specific deployment or test scenarios.
+Storage backends can be disabled to address specific deployment or test scenarios.
 
 See `kstash.Config.backends` for more details.
 
