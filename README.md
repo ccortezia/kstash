@@ -4,7 +4,7 @@
 
 It allows programs to communicate using stash addresses instead of entire payloads, reducing the strain on messaging systems.
 
-[![CI](https://github.com/ccortezia/kstash/actions/workflows/main.yml/badge.svg)](https://github.com/ccortezia/kstash/actions/workflows/main.yml)
+[![CI](https://github.com/ccortezia/kstash/actions/workflows/release.yml/badge.svg)](https://github.com/ccortezia/kstash/actions/workflows/release.yml)
 
 ## Installation
 
